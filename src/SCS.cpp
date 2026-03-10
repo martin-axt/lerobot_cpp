@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
-#include "SCS.h"
+#include <lerobot_cpp/SCS.h>
 
 /**
  * @brief Default constructor for SCS base class

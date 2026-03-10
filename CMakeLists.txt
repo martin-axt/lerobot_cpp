@@ -1,18 +1,43 @@
 cmake_minimum_required(VERSION 3.10)
-set(project "SCServo")
+set(project "lerobot_cpp")
 project(${project} LANGUAGES CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
 
-# Include SMS_STS, SCSCL, HLSCL, and base classes
-set(hdrs include/SMS_STS.h include/SCSerial.h include/SCS.h include/SCSCL.h
-         include/INST.h include/HLSCL.h include/ServoUtils.h
-         include/SyncWriteBuffer.h include/ServoErrors.h include/SCServo.h)
-set(srs src/SMS_STS.cpp src/SCSerial.cpp src/SCS.cpp src/SCSCL.cpp src/HLSCL.cpp)
+option(BUILD_EXAMPLES "Builds the examples" ON)
 
-add_library(${project} STATIC ${hdrs} ${srs})
+set(Headers
+        include/lerobot_cpp/STS3215.h
+        include/lerobot_cpp/SCSerial.h
+        include/lerobot_cpp/SCS.h
+        include/lerobot_cpp/INST.h
+        include/lerobot_cpp/ServoUtils.h
+        include/lerobot_cpp/SyncWriteBuffer.h
+        include/lerobot_cpp/ServoErrors.h
+
+        # Robots
+        include/lerobot_cpp/robots/SO101.h
+        include/lerobot_cpp/robots/RobotUtils.h
+)
+
+set(Source
+        src/STS3215.cpp
+        src/SCSerial.cpp
+        src/SCS.cpp
+
+        # Robots
+        src/robots/SO101.cpp
+        src/robots/RobotUtils.cpp
+)
+
+
+add_library(${project} STATIC ${Headers} ${Source})
+
 target_include_directories(${project} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}/scservo>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
-set_target_properties(${project} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+if (${BUILD_EXAMPLES})
+    include(examples/examples.cmake)
+endif ()

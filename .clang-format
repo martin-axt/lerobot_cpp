@@ -1,4 +1,4 @@
-# Clang-Format configuration for SCServo_Linux
+# Clang-Format configuration for lerobot_cpp_Linux
 # Based on LLVM style with modifications for consistency
 
 BasedOnStyle: LLVM

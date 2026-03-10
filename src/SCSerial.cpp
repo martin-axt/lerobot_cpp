@@ -22,15 +22,15 @@
  * @see SCSerial.h for class interface documentation
  */
 
-#include "SCSerial.h"
+#include <lerobot_cpp/SCSerial.h>
 
 // macOS compatibility: Define missing baud rate constants
 #ifdef __APPLE__
 #ifndef B500000
-#define B500000 500000
+#define B500000 500000      // Missing termios constant for 500kbps on macOS
 #endif
 #ifndef B1000000
-#define B1000000 1000000
+#define B1000000 1000000    // Missing termios constant for 1Mbps on macOS
 #endif
 #endif
 

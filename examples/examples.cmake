@@ -1,0 +1,6 @@
+FILE(GLOB_RECURSE EXAMPLES ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+foreach (EXAMPLE ${EXAMPLES})
+    get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WE)
+    add_executable(${project}_example_${EXAMPLE_NAME} ${EXAMPLE})
+    target_link_libraries(${project}_example_${EXAMPLE_NAME} PRIVATE ${project})
+endforeach ()
