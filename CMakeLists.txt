@@ -3,6 +3,7 @@ set(project "lerobot_cpp")
 project(${project} LANGUAGES CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
+add_compile_options(-fPIC)
 
 option(BUILD_EXAMPLES "Builds the examples" ON)
 
