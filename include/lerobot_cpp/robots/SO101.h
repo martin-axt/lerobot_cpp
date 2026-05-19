@@ -46,6 +46,8 @@ public:
 
 	// Nominal limits from `so101_new_calib.urdf` (radians), used for logging and safe clamping.
 	// URDF mentions some 5° Offset in the joint between lower and upper arms (joint 3)
+	// URDF and joint limits taken from https://github.com/TheRobotStudio/SO-ARM100/blob/main/Simulation/SO101/so101_new_calib.urdf
+	// Commit 385e8d7
 	static constexpr std::array<std::pair<float, float>, 6> JOINT_LIMITS = {{
 		{-1.91986f, 1.91986f},
 		{-1.74533f, 1.74533f},
