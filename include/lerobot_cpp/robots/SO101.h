@@ -43,6 +43,18 @@
  */
 class SO101 {
 public:
+
+	// Nominal limits from `so101_new_calib.urdf` (radians), used for logging and safe clamping.
+	// URDF mentions some 5° Offset in the joint between lower and upper arms (joint 3)
+	static constexpr std::array<std::pair<float, float>, 6> JOINT_LIMITS = {{
+		{-1.91986f, 1.91986f},
+		{-1.74533f, 1.74533f},
+		{-1.69f, 1.69f}, //Joint 3
+		{-1.65806f, 1.65806f},
+		{-2.74385f, 2.84121f},
+		{-0.174533f, 1.74533f}
+	}};
+
     /**
      * @brief Initialize SO101 robot controller
      * @param servoInstance Reference to an initialized STS3215 instance
@@ -97,10 +109,10 @@ public:
      */
     float getJointAngle(u8 jointIndex);
 
-    /**
-     * @brief Check if any joint of the robot is moving
-     * @return true if moving, false otherwise
-     */
+	/**
+	 * @brief Check if any joint of the robot is moving
+	 * @return true if moving, false otherwise
+	 */
     bool isMoving();
 
     /**

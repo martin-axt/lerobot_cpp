@@ -4,6 +4,7 @@
 #include <ostream>
 #include <thread>
 #include <unistd.h>
+#include <algorithm>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 // Circular constant for calculations when not in math.h
@@ -54,13 +55,12 @@ bool SO101::storeLimits(const std::array<int, 6>& minPositions, const std::array
 }
 
 int SO101::setJointAngle(u8 jointIndex, float angleRad, float speedRadPerS, float accRadPerS2) {
+
     if (jointIndex >= servoIDs.size()) return 0;
-    
-    // Calculate steps relative to the midpoint of limits
-    // 0 rad = (min + max) / 2
-    s16 midpoint = (minLimits[jointIndex] + maxLimits[jointIndex]) / 2;
-    s16 steps = midpoint + RobotUtils::radToSteps(angleRad);
-    
+	// Clamping to given URDF angles to avoid invalid movements
+	std::pair<float, float> jointLimits = JOINT_LIMITS[jointIndex];
+	angleRad = std::clamp(angleRad, jointLimits.first, jointLimits.second);
+	s16 steps = RobotUtils::radToSteps(angleRad);
     u16 speedSteps = RobotUtils::radPerSToStepsPerS(speedRadPerS);
     u8 accUnits = RobotUtils::radPerS2ToAccUnits(accRadPerS2);
     
@@ -82,9 +82,10 @@ void SO101::setAllJointAngles(const std::array<float, 6>& anglesRad,
     // In the vector version, it checked sizes.
     
     for (size_t i = 0; i < 6; ++i) {
-        s16 midpoint = (minLimits[i] + maxLimits[i]) / 2;
-        positions[i] = midpoint + RobotUtils::radToSteps(anglesRad[i]);
-        
+    	// Clamping to given URDF angles to avoid invalid movements
+    	std::pair<float, float> jointLimits = JOINT_LIMITS[i];
+    	positions[i] = RobotUtils::radToSteps(std::clamp(anglesRad[i], jointLimits.first, jointLimits.second));
+
         // If speed is 0, we might want to use a default speed, 
         // but let's just convert what's provided.
         speeds[i] = RobotUtils::radPerSToStepsPerS(speedsRadPerS[i]);
@@ -102,9 +103,8 @@ float SO101::getJointAngle(u8 jointIndex) {
     
     int pos = sm_st.ReadPos(servoIDs[jointIndex]);
     if (pos == -1) return NAN;
-    
-    s16 midpoint = (minLimits[jointIndex] + maxLimits[jointIndex]) / 2;
-    return RobotUtils::stepsToRad((s16)pos - midpoint);
+
+	return RobotUtils::stepsToRad((s16)pos);
 }
 
 bool SO101::isMoving() {
