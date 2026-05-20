@@ -71,20 +71,6 @@ public:
     bool init(const std::array<u8, 6>& ids = {1, 2, 3, 4, 5, 6});
 
     /**
-     * @brief Reload joint limits from servos
-     * @return true if successful
-     */
-    bool reloadLimits();
-
-    /**
-     * @brief Save joint limits to servos' EEPROM and reload internal cache
-     * @param minPositions Array of 6 minimum joint positions (steps, 0-4095)
-     * @param maxPositions Array of 6 maximum joint positions (steps, 0-4095)
-     * @return true if successful
-     */
-    bool storeLimits(const std::array<int, 6>& minPositions, const std::array<int, 6>& maxPositions);
-
-    /**
      * @brief Move a specific joint to an angle in radians
      * @param jointIndex Joint index (0-5)
      * @param angleRad Target angle in radians
@@ -134,8 +120,6 @@ public:
 private:
     STS3215& sm_st;
     std::array<u8, 6> servoIDs{};
-    std::array<s16, 6> minLimits{};
-    std::array<s16, 6> maxLimits{};
 };
 
 #endif // _SO101_H

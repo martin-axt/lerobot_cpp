@@ -15,8 +15,6 @@ SO101::SO101(STS3215& servoInstance) : sm_st(servoInstance) {
 
 bool SO101::init(const std::array<u8, 6>& ids) {
     servoIDs = ids;
-    minLimits.fill(0);
-    maxLimits.fill(4095);
 
     for (u8 id : servoIDs) {
         // Initialize motor to servo mode (0)
@@ -27,31 +25,7 @@ bool SO101::init(const std::array<u8, 6>& ids) {
             }
         }
     }
-    return reloadLimits();
-}
-
-bool SO101::reloadLimits() {
-    for (size_t i = 0; i < servoIDs.size(); ++i) {
-        int minL = sm_st.readWord(servoIDs[i], STS3215_MIN_ANGLE_LIMIT_L);
-        int maxL = sm_st.readWord(servoIDs[i], STS3215_MAX_ANGLE_LIMIT_L);
-        if (minL == -1 || maxL == -1) {
-            return false;
-        }
-        minLimits[i] = (s16)minL;
-        maxLimits[i] = (s16)maxL;
-    }
     return true;
-}
-
-bool SO101::storeLimits(const std::array<int, 6>& minPositions, const std::array<int, 6>& maxPositions) {
-    for (size_t i = 0; i < servoIDs.size(); ++i) {
-        u8 id = servoIDs[i];
-        sm_st.unLockEeprom(id);
-        sm_st.writeWord(id, STS3215_MIN_ANGLE_LIMIT_L, (u16)minPositions[i]);
-        sm_st.writeWord(id, STS3215_MAX_ANGLE_LIMIT_L, (u16)maxPositions[i]);
-        sm_st.LockEeprom(id);
-    }
-    return reloadLimits();
 }
 
 int SO101::setJointAngle(u8 jointIndex, float angleRad, float speedRadPerS, float accRadPerS2) {
