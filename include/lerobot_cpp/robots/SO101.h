@@ -43,6 +43,20 @@
  */
 class SO101 {
 public:
+
+	// Nominal limits from `so101_new_calib.urdf` (radians), used for logging and safe clamping.
+	// URDF mentions some 5° Offset in the joint between lower and upper arms (joint 3)
+	// URDF and joint limits taken from https://github.com/TheRobotStudio/SO-ARM100/blob/main/Simulation/SO101/so101_new_calib.urdf
+	// Commit 385e8d7
+	static constexpr std::array<std::pair<float, float>, 6> JOINT_LIMITS = {{
+		{-1.91986f, 1.91986f},
+		{-1.74533f, 1.74533f},
+		{-1.69f, 1.69f}, //Joint 3
+		{-1.65806f, 1.65806f},
+		{-2.74385f, 2.84121f},
+		{-0.174533f, 1.74533f}
+	}};
+
     /**
      * @brief Initialize SO101 robot controller
      * @param servoInstance Reference to an initialized STS3215 instance
@@ -55,20 +69,6 @@ public:
      * @return true if successful
      */
     bool init(const std::array<u8, 6>& ids = {1, 2, 3, 4, 5, 6});
-
-    /**
-     * @brief Reload joint limits from servos
-     * @return true if successful
-     */
-    bool reloadLimits();
-
-    /**
-     * @brief Save joint limits to servos' EEPROM and reload internal cache
-     * @param minPositions Array of 6 minimum joint positions (steps, 0-4095)
-     * @param maxPositions Array of 6 maximum joint positions (steps, 0-4095)
-     * @return true if successful
-     */
-    bool storeLimits(const std::array<int, 6>& minPositions, const std::array<int, 6>& maxPositions);
 
     /**
      * @brief Move a specific joint to an angle in radians
@@ -97,10 +97,10 @@ public:
      */
     float getJointAngle(u8 jointIndex);
 
-    /**
-     * @brief Check if any joint of the robot is moving
-     * @return true if moving, false otherwise
-     */
+	/**
+	 * @brief Check if any joint of the robot is moving
+	 * @return true if moving, false otherwise
+	 */
     bool isMoving();
 
     /**
@@ -120,8 +120,6 @@ public:
 private:
     STS3215& sm_st;
     std::array<u8, 6> servoIDs{};
-    std::array<s16, 6> minLimits{};
-    std::array<s16, 6> maxLimits{};
 };
 
 #endif // _SO101_H

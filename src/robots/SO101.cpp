@@ -4,6 +4,7 @@
 #include <ostream>
 #include <thread>
 #include <unistd.h>
+#include <algorithm>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 // Circular constant for calculations when not in math.h
@@ -14,8 +15,6 @@ SO101::SO101(STS3215& servoInstance) : sm_st(servoInstance) {
 
 bool SO101::init(const std::array<u8, 6>& ids) {
     servoIDs = ids;
-    minLimits.fill(0);
-    maxLimits.fill(4095);
 
     for (u8 id : servoIDs) {
         // Initialize motor to servo mode (0)
@@ -26,41 +25,16 @@ bool SO101::init(const std::array<u8, 6>& ids) {
             }
         }
     }
-    return reloadLimits();
-}
-
-bool SO101::reloadLimits() {
-    for (size_t i = 0; i < servoIDs.size(); ++i) {
-        int minL = sm_st.readWord(servoIDs[i], STS3215_MIN_ANGLE_LIMIT_L);
-        int maxL = sm_st.readWord(servoIDs[i], STS3215_MAX_ANGLE_LIMIT_L);
-        if (minL == -1 || maxL == -1) {
-            return false;
-        }
-        minLimits[i] = (s16)minL;
-        maxLimits[i] = (s16)maxL;
-    }
     return true;
 }
 
-bool SO101::storeLimits(const std::array<int, 6>& minPositions, const std::array<int, 6>& maxPositions) {
-    for (size_t i = 0; i < servoIDs.size(); ++i) {
-        u8 id = servoIDs[i];
-        sm_st.unLockEeprom(id);
-        sm_st.writeWord(id, STS3215_MIN_ANGLE_LIMIT_L, (u16)minPositions[i]);
-        sm_st.writeWord(id, STS3215_MAX_ANGLE_LIMIT_L, (u16)maxPositions[i]);
-        sm_st.LockEeprom(id);
-    }
-    return reloadLimits();
-}
-
 int SO101::setJointAngle(u8 jointIndex, float angleRad, float speedRadPerS, float accRadPerS2) {
+
     if (jointIndex >= servoIDs.size()) return 0;
-    
-    // Calculate steps relative to the midpoint of limits
-    // 0 rad = (min + max) / 2
-    s16 midpoint = (minLimits[jointIndex] + maxLimits[jointIndex]) / 2;
-    s16 steps = midpoint + RobotUtils::radToSteps(angleRad);
-    
+	// Clamping to given URDF angles to avoid invalid movements
+	std::pair<float, float> jointLimits = JOINT_LIMITS[jointIndex];
+	angleRad = std::clamp(angleRad, jointLimits.first, jointLimits.second);
+	s16 steps = RobotUtils::radToSteps(angleRad);
     u16 speedSteps = RobotUtils::radPerSToStepsPerS(speedRadPerS);
     u8 accUnits = RobotUtils::radPerS2ToAccUnits(accRadPerS2);
     
@@ -82,9 +56,10 @@ void SO101::setAllJointAngles(const std::array<float, 6>& anglesRad,
     // In the vector version, it checked sizes.
     
     for (size_t i = 0; i < 6; ++i) {
-        s16 midpoint = (minLimits[i] + maxLimits[i]) / 2;
-        positions[i] = midpoint + RobotUtils::radToSteps(anglesRad[i]);
-        
+    	// Clamping to given URDF angles to avoid invalid movements
+    	std::pair<float, float> jointLimits = JOINT_LIMITS[i];
+    	positions[i] = RobotUtils::radToSteps(std::clamp(anglesRad[i], jointLimits.first, jointLimits.second));
+
         // If speed is 0, we might want to use a default speed, 
         // but let's just convert what's provided.
         speeds[i] = RobotUtils::radPerSToStepsPerS(speedsRadPerS[i]);
@@ -102,9 +77,8 @@ float SO101::getJointAngle(u8 jointIndex) {
     
     int pos = sm_st.ReadPos(servoIDs[jointIndex]);
     if (pos == -1) return NAN;
-    
-    s16 midpoint = (minLimits[jointIndex] + maxLimits[jointIndex]) / 2;
-    return RobotUtils::stepsToRad((s16)pos - midpoint);
+
+	return RobotUtils::stepsToRad((s16)pos);
 }
 
 bool SO101::isMoving() {

@@ -29,14 +29,7 @@ mkdir build && cd build
 cmake .. && make -j4
 ```
 
-### 2. Calibrate the robot (Optional)
-The joint limits and home positions can be set interactively using the calibration tool.
-```bash
-./lerobot_cpp_calibration /dev/ttyACM0
-```
-
-
-### 3. Run the Wave Example
+### 2. Run the Wave Example
 
 To build and run the provided wave example:
 
@@ -55,7 +48,6 @@ sudo chmod 666 /dev/ttyACM0
 | `SO101_Home` | Moves the robot to the calibrated 0 radian (midpoint) position. |
 | `SO101_Wave` | Performs a soft "hello" waving animation. |
 | `SO101_Record` | Logs current joint positions in real-time for manual teaching. |
-| `SO101_Calibration` | Interactive tool to set EEPROM offsets and mechanical limits. |
 
 ## Documentation
 

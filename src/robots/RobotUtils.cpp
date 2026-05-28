@@ -7,12 +7,14 @@
 namespace RobotUtils {
 
     s16 radToSteps(float rad) {
-        float steps = rad * (STEPS_PER_REV / (2.0f * M_PI));
+    	// Add pi offset (in motor steps) for proper midpoint of motor
+        float steps = rad * (STEPS_PER_REV / (2.0f * M_PI)) + 2047;
         return (s16)round(steps);
     }
 
     float stepsToRad(s16 steps) {
-        return (float)steps * RAD_PER_STEP;
+    	// subtract pi offset (in motor steps) for proper midpoint of motor
+        return ((float)steps - 2047) * RAD_PER_STEP;
     }
 
     u16 radPerSToStepsPerS(float radPerS) {
