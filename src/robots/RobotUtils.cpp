@@ -22,6 +22,10 @@ namespace RobotUtils {
         return (u16)abs(round(stepsPerS));
     }
 
+    float stepsPerSToRadPerS(s16 stepsPerS) {
+        return static_cast<float>(stepsPerS) * RAD_PER_STEP;
+    }
+
     u8 radPerS2ToAccUnits(float radPerS2) {
         float stepsPerS2 = radPerS2 / RAD_PER_STEP;
         float accUnits = stepsPerS2 / 100.0f;
