@@ -37,6 +37,13 @@ namespace RobotUtils {
     u16 radPerSToStepsPerS(float radPerS);
 
     /**
+     * @brief Convert raw signed servo speed (steps/s) to rad/s
+     * @param stepsPerS Signed speed from feedback (ReadSpeed / SyncReadSpeed)
+     * @return Angular velocity in radians per second
+     */
+    float stepsPerSToRadPerS(s16 stepsPerS);
+
+    /**
      * @brief Convert angular acceleration (rad/s^2) to raw servo acceleration units
      * @param radPerS2 Angular acceleration in radians per second squared
      * @return Raw servo acceleration units (1 unit = 100 steps/s^2)

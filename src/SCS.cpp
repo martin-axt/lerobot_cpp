@@ -32,6 +32,9 @@ SCS::SCS()
 {
 	Level = 1;  // All instructions except broadcast return acknowledgement
 	Error = 0;
+	syncReadRxBuff = nullptr;
+	syncReadRxBuffLen = 0;
+	syncReadRxBuffMax = 0;
 }
 
 /**
@@ -44,6 +47,9 @@ SCS::SCS(u8 End)
 	Level = 1;
 	this->End = End;
 	Error = 0;
+	syncReadRxBuff = nullptr;
+	syncReadRxBuffLen = 0;
+	syncReadRxBuffMax = 0;
 }
 
 /**
@@ -57,6 +63,9 @@ SCS::SCS(u8 End, u8 Level)
 	this->Level = Level;
 	this->End = End;
 	Error = 0;
+	syncReadRxBuff = nullptr;
+	syncReadRxBuffLen = 0;
+	syncReadRxBuffMax = 0;
 }
 
 /**

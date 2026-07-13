@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file STS3215.cpp
  * @brief Feetech STS3215 series serial servo application layer implementation
  *
@@ -454,6 +454,42 @@ int STS3215::ReadPos(int ID)
 }
 
 /**
+ * @brief Synchronised read of all current servo positions
+ *
+ * Reads positions from servos with one direct synchronised command and stores them in an input pointer.
+ *
+ * @param ID Servo ID
+ * @return Success Count as an int detailing how many servos could be read successfully
+ */
+int STS3215::SyncReadPos(u8 ID[], u8 IDN, s16 *Position)
+{
+	syncReadBegin(IDN, 2); // allocates RX buffer: IDN motors × 2 bytes each
+
+	if (syncReadPacketTx(ID, IDN, STS3215_PRESENT_POSITION_L, 2) == 0) {
+		syncReadEnd();
+		Err = 1;
+		return 0;
+	}
+
+	u8 rxBuf[2];
+	int successCount = 0;
+	for (u8 i = 0; i < IDN; i++) {
+		if (syncReadPacketRx(ID[i], rxBuf) != 2) {
+			Err = 1;
+			Position[i] = 0; // safe fallback — caller will use last good value
+			continue;
+		}
+		// syncReadRxPacketToWrod decodes the Feetech direction bit into a signed int
+		Position[i] = (s16)syncReadRxPacketToWrod(STS3215_DIRECTION_BIT_POS);
+		successCount++;
+	}
+
+	syncReadEnd(); // frees RX buffer
+	Err = (successCount == IDN) ? 0 : 1;
+	return successCount;
+}
+
+/**
  * @brief Read current servo speed
  * 
  * Reads speed from servo or from cached buffer.
@@ -473,6 +509,41 @@ int STS3215::ReadSpeed(int ID)
 		}
 		Err = 0;
 		return readSignedWord(ID, STS3215_PRESENT_SPEED_L, STS3215_DIRECTION_BIT_POS);
+}
+
+/**
+ * @brief Synchronised read of all current servo speeds
+ *
+ * Reads speeds from servos with one direct synchronised command and stores them in an input pointer.
+ *
+ * @param ID Servo ID
+ * @return Success Count as an int detailing how many servos could be read successfully
+ */
+int STS3215::SyncReadSpeed(u8 ID[], u8 IDN, s16 *Speed)
+{
+	syncReadBegin(IDN, 2);
+
+	if (syncReadPacketTx(ID, IDN, STS3215_PRESENT_SPEED_L, 2) == 0) {
+		syncReadEnd();
+		Err = 1;
+		return 0;
+	}
+
+	u8 rxBuf[2];
+	int successCount = 0;
+	for (u8 i = 0; i < IDN; i++) {
+		if (syncReadPacketRx(ID[i], rxBuf) != 2) {
+			Err = 1;
+			Speed[i] = 0;
+			continue;
+		}
+		Speed[i] = (s16)syncReadRxPacketToWrod(STS3215_DIRECTION_BIT_POS);
+		successCount++;
+	}
+
+	syncReadEnd();
+	Err = (successCount == IDN) ? 0 : 1;
+	return successCount;
 }
 
 /**

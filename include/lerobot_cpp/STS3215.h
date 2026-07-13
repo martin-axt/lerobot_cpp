@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file STS3215.h
  * @brief Feetech STS3215 Series Serial Servo Application Layer
  *
@@ -222,6 +222,10 @@ public:
 	 *  @param ID Servo ID, or -1 to read from cache (after FeedBack)
 	 *  @return Position (0-4095), -1 on error */
 	virtual int ReadPos(int ID);
+
+	virtual int SyncReadPos(u8 ID[], u8 IDN, s16 *Position);
+
+	virtual int SyncReadSpeed(u8 ID[], u8 IDN, s16 *Speed);
 
 	/** @brief Read current speed
 	 *  @param ID Servo ID, or -1 for cached read

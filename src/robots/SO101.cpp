@@ -81,6 +81,41 @@ float SO101::getJointAngle(u8 jointIndex) {
 	return RobotUtils::stepsToRad((s16)pos);
 }
 
+std::optional<std::array<float, 6>> SO101::getAllJointAngles()
+{
+	std::array<s16, 6> positions{};
+	if (sm_st.SyncReadPos(servoIDs.data(), 6, positions.data()) == 0)
+		return std::nullopt;
+
+	std::array<float, 6> anglesRad{};
+	for (size_t i = 0; i < 6; i++)
+		anglesRad[i] = RobotUtils::stepsToRad(positions[i]);
+
+	return anglesRad;
+}
+
+float SO101::getJointSpeed(u8 jointIndex) {
+    if (jointIndex >= servoIDs.size()) return NAN;
+
+    int speedSteps = sm_st.ReadSpeed(servoIDs[jointIndex]);
+    if (speedSteps == -1) return NAN;
+
+    return RobotUtils::stepsPerSToRadPerS((s16)speedSteps);
+}
+
+std::optional<std::array<float, 6>> SO101::getAllJointSpeeds()
+{
+	std::array<s16, 6> speedsSteps{};
+	if (sm_st.SyncReadSpeed(servoIDs.data(), 6, speedsSteps.data()) == 0)
+		return std::nullopt;
+
+	std::array<float, 6> speedsRad{};
+	for (size_t i = 0; i < 6; i++)
+		speedsRad[i] = RobotUtils::stepsPerSToRadPerS(speedsSteps[i]);
+
+	return speedsRad;
+}
+
 bool SO101::isMoving() {
     for (u8 id : servoIDs) {
         if (sm_st.ReadMove(id) == 1) {

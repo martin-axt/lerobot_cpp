@@ -32,10 +32,11 @@
 #define _SO101_H
 
 #include <array>
-#include <vector>
 #include <cmath>
 #include <lerobot_cpp/STS3215.h>
 #include <lerobot_cpp/robots/RobotUtils.h>
+#include <optional>
+#include <vector>
 
 /**
  * @class SO101
@@ -96,6 +97,21 @@ public:
      * @return Angle in radians, or NaN on error
      */
     float getJointAngle(u8 jointIndex);
+
+	std::optional<std::array<float, 6>> getAllJointAngles();
+
+    /**
+     * @brief Get current joint speed in radians per second
+     * @param jointIndex Joint index (0-5)
+     * @return Speed in rad/s, or NaN on error
+     */
+    float getJointSpeed(u8 jointIndex);
+
+    /**
+     * @brief Get all joint speeds via synchronized bus read
+     * @return Array of 6 speeds in rad/s, or nullopt if sync read failed
+     */
+    std::optional<std::array<float, 6>> getAllJointSpeeds();
 
 	/**
 	 * @brief Check if any joint of the robot is moving
