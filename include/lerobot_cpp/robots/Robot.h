@@ -8,6 +8,7 @@
  * handled in SI units (radians and millimeters).
  * 
  * @see STS3215 for the underlying communication layer
+ * @see RobotBase for the non-templated base class
  */
 
 #ifndef _ROBOT_H
@@ -17,10 +18,12 @@
 #include <chrono>
 #include <cmath>
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <vector>
 #include <unistd.h>
 #include <lerobot_cpp/STS3215.h>
+#include <lerobot_cpp/robots/RobotBase.h>
 #include <lerobot_cpp/robots/RobotUtils.h>
 
 #ifndef M_PI
@@ -33,7 +36,7 @@
  * @tparam N Number of servos / joints
  */
 template <size_t N>
-class Robot {
+class Robot : public RobotBase {
 public:
     static constexpr size_t NUM_JOINTS = N;
 
@@ -67,7 +70,7 @@ public:
      * @param limits Optional joint limits array (defaults to [-pi, pi] per joint)
      */
     Robot(STS3215& servoInstance, const std::array<std::pair<float, float>, N>& limits = defaultJointLimits())
-        : sm_st(servoInstance), servoIDs(defaultServoIDs()), jointLimits(limits) {
+        : RobotBase(servoInstance), servoIDs(defaultServoIDs()), jointLimits(limits) {
     }
 
     virtual ~Robot() = default;
@@ -77,19 +80,27 @@ public:
      * @param ids Array of N servo IDs
      * @return true if successful
      */
-    bool init(const std::array<u8, N>& ids = defaultServoIDs()) {
+    bool init(const std::array<u8, N>& ids) {
         servoIDs = ids;
 
         for (u8 id : servoIDs) {
             // Initialize motor to servo mode (0)
-            if (sm_st.InitMotor(id, 0, 1) == 0) {
+            if (this->sm_st.InitMotor(id, 0, 1) == 0) {
                 // Check if motor responds (Ping) as fallback
-                if (sm_st.Ping(id) == -1) {
+                if (this->sm_st.Ping(id) == -1) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    /**
+     * @brief Initialize motors using currently configured servo IDs
+     * @return true if successful
+     */
+    bool init() override {
+        return init(servoIDs);
     }
 
     /**
@@ -100,7 +111,7 @@ public:
      * @param accRadPerS2 Angular acceleration in radians/second^2 (default 0.5)
      * @return 1 on success, 0 on failure
      */
-    int setJointAngle(u8 jointIndex, float angleRad, float speedRadPerS = 1.0f, float accRadPerS2 = 0.5f) {
+    int setJointAngle(u8 jointIndex, float angleRad, float speedRadPerS = 1.0f, float accRadPerS2 = 0.5f) override {
         if (jointIndex >= N) return 0;
         // Clamping to joint limits to avoid invalid movements
         std::pair<float, float> limit = jointLimits[jointIndex];
@@ -109,7 +120,7 @@ public:
         u16 speedSteps = RobotUtils::radPerSToStepsPerS(speedRadPerS);
         u8 accUnits = RobotUtils::radPerS2ToAccUnits(accRadPerS2);
 
-        return sm_st.WritePosEx(servoIDs[jointIndex], steps, speedSteps, accUnits);
+        return this->sm_st.WritePosEx(servoIDs[jointIndex], steps, speedSteps, accUnits);
     }
 
     /**
@@ -137,7 +148,7 @@ public:
             if (accs[i] == 0 && accsRadPerS2[i] == 0.0f) accs[i] = 10; // Default if not specified
         }
 
-        sm_st.SyncWritePosEx(servoIDs.data(), static_cast<u8>(N), positions.data(), speeds.data(), accs.data());
+        this->sm_st.SyncWritePosEx(servoIDs.data(), static_cast<u8>(N), positions.data(), speeds.data(), accs.data());
     }
 
     /**
@@ -145,10 +156,10 @@ public:
      * @param jointIndex Joint index (0 to N-1)
      * @return Angle in radians, or NaN on error
      */
-    float getJointAngle(u8 jointIndex) {
+    float getJointAngle(u8 jointIndex) override {
         if (jointIndex >= N) return NAN;
 
-        int pos = sm_st.ReadPos(servoIDs[jointIndex]);
+        int pos = this->sm_st.ReadPos(servoIDs[jointIndex]);
         if (pos == -1) return NAN;
 
         return RobotUtils::stepsToRad((s16)pos);
@@ -160,7 +171,7 @@ public:
      */
     std::optional<std::array<float, N>> getAllJointAngles() {
         std::array<s16, N> positions{};
-        if (sm_st.SyncReadPos(servoIDs.data(), static_cast<u8>(N), positions.data()) == 0)
+        if (this->sm_st.SyncReadPos(servoIDs.data(), static_cast<u8>(N), positions.data()) == 0)
             return std::nullopt;
 
         std::array<float, N> anglesRad{};
@@ -175,10 +186,10 @@ public:
      * @param jointIndex Joint index (0 to N-1)
      * @return Speed in rad/s, or NaN on error
      */
-    float getJointSpeed(u8 jointIndex) {
+    float getJointSpeed(u8 jointIndex) override {
         if (jointIndex >= N) return NAN;
 
-        int speedSteps = sm_st.ReadSpeed(servoIDs[jointIndex]);
+        int speedSteps = this->sm_st.ReadSpeed(servoIDs[jointIndex]);
         if (speedSteps == -1) return NAN;
 
         return RobotUtils::stepsPerSToRadPerS((s16)speedSteps);
@@ -190,7 +201,7 @@ public:
      */
     std::optional<std::array<float, N>> getAllJointSpeeds() {
         std::array<s16, N> speedsSteps{};
-        if (sm_st.SyncReadSpeed(servoIDs.data(), static_cast<u8>(N), speedsSteps.data()) == 0)
+        if (this->sm_st.SyncReadSpeed(servoIDs.data(), static_cast<u8>(N), speedsSteps.data()) == 0)
             return std::nullopt;
 
         std::array<float, N> speedsRad{};
@@ -204,9 +215,9 @@ public:
      * @brief Check if any joint of the robot is moving
      * @return true if moving, false otherwise
      */
-    bool isMoving() {
+    bool isMoving() override {
         for (u8 id : servoIDs) {
-            if (sm_st.ReadMove(id) == 1) {
+            if (this->sm_st.ReadMove(id) == 1) {
                 return true;
             }
         }
@@ -214,33 +225,12 @@ public:
     }
 
     /**
-     * @brief Wait until all joints have finished their current movement
-     * @param pollIntervalMs Interval between checks in milliseconds (default 20ms)
-     * @param timeoutMs Maximum wait time in milliseconds (0 for no timeout, default 0)
-     * @return true if all joints stopped, false on timeout
-     */
-    bool waitMovementFinished(int pollIntervalMs = 20, int timeoutMs = 0) {
-        auto start = std::chrono::steady_clock::now();
-        while (isMoving()) {
-            if (timeoutMs > 0) {
-                auto now = std::chrono::steady_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-                if (elapsed >= timeoutMs) {
-                    return false;
-                }
-            }
-            usleep(pollIntervalMs * 1000);
-        }
-        return true;
-    }
-
-    /**
      * @brief Enable/disable torque for all joints
      * @param enable true to enable, false to disable
      */
-    void enableTorque(bool enable) {
+    void enableTorque(bool enable) override {
         for (u8 id : servoIDs) {
-            sm_st.EnableTorque(id, enable ? 1 : 0);
+            this->sm_st.EnableTorque(id, enable ? 1 : 0);
         }
     }
 
@@ -258,14 +248,14 @@ public:
      * @param minRad Minimum angle in radians
      * @param maxRad Maximum angle in radians
      */
-    void setJointLimit(u8 jointIndex, float minRad, float maxRad) {
+    void setJointLimit(u8 jointIndex, float minRad, float maxRad) override {
         if (jointIndex < N) {
             jointLimits[jointIndex] = {minRad, maxRad};
         }
     }
 
     /**
-     * @brief Get current joint limits
+     * @brief Get current joint limits as std::array
      * @return Array of min/max angle pairs in radians
      */
     const std::array<std::pair<float, float>, N>& getJointLimits() const {
@@ -273,17 +263,36 @@ public:
     }
 
     /**
-     * @brief Get configured servo IDs
+     * @brief Get limits for a specific joint
+     * @param jointIndex Joint index
+     * @return Pair of min/max angles in radians, or {NAN, NAN} if index invalid
+     */
+    std::pair<float, float> getJointLimit(u8 jointIndex) const override {
+        if (jointIndex < N) {
+            return jointLimits[jointIndex];
+        }
+        return {NAN, NAN};
+    }
+
+    /**
+     * @brief Get configured servo IDs as std::array
      * @return Array of N servo IDs
      */
     const std::array<u8, N>& getServoIDs() const {
         return servoIDs;
     }
 
+    /**
+     * @brief Get number of joints
+     * @return Number of joints
+     */
+    size_t getNumJoints() const override {
+        return N;
+    }
+
 protected:
-    STS3215& sm_st;
-    std::array<u8, N> servoIDs{};
-    std::array<std::pair<float, float>, N> jointLimits{};
+    std::array<u8, N> servoIDs;
+    std::array<std::pair<float, float>, N> jointLimits;
 };
 
 #endif // _ROBOT_H

@@ -17,6 +17,7 @@ set(Headers
         include/lerobot_cpp/ServoErrors.h
 
         # Robots
+        include/lerobot_cpp/robots/RobotBase.h
         include/lerobot_cpp/robots/Robot.h
         include/lerobot_cpp/robots/SO101.h
         include/lerobot_cpp/robots/RobotUtils.h
@@ -28,6 +29,7 @@ set(Source
         src/SCS.cpp
 
         # Robots
+        src/robots/RobotBase.cpp
         src/robots/SO101.cpp
         src/robots/RobotUtils.cpp
 )
