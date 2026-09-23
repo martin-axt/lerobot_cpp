@@ -10,6 +10,9 @@
 #include <limits>
 #include <sys/select.h>
 #include <unistd.h>
+#include <lerobot_cpp/STS3215.h>
+#include <lerobot_cpp/robots/Robot.h>
+#include <lerobot_cpp/robots/SO101.h>
 
 /**
  * @namespace ExampleUtils
@@ -49,6 +52,30 @@ inline bool isEnterPressed(long timeoutUs = 100000) {
  */
 inline void waitForEnter() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
+/**
+ * @brief Run a function with a Robot instance initialized with the specified number of joints.
+ * Defaults to SO101 configuration when 6 joints are specified.
+ * @tparam Func Callable taking Robot<N>&
+ * @param numJoints Number of joints (degrees of freedom)
+ * @param sm_st Reference to initialized STS3215 instance
+ * @param func Function to execute with the robot instance
+ * @return Exit code from func
+ */
+template <typename Func>
+int runWithRobot(size_t numJoints, STS3215& sm_st, Func&& func) {
+    switch (numJoints) {
+        case 1: { Robot<1> r(sm_st); return func(r); }
+        case 2: { Robot<2> r(sm_st); return func(r); }
+        case 3: { Robot<3> r(sm_st); return func(r); }
+        case 4: { Robot<4> r(sm_st); return func(r); }
+        case 5: { Robot<5> r(sm_st); return func(r); }
+        case 6: { SO101 r(sm_st); return func(r); } // Default SO101 configuration
+        default:
+            std::cerr << "Unsupported number of joints: " << numJoints << " (supported: 1-6)" << std::endl;
+            return 1;
+    }
 }
 
 } // namespace ExampleUtils
