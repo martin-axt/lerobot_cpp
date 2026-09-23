@@ -31,18 +31,13 @@
 #ifndef _SO101_H
 #define _SO101_H
 
-#include <array>
-#include <cmath>
-#include <lerobot_cpp/STS3215.h>
-#include <lerobot_cpp/robots/RobotUtils.h>
-#include <optional>
-#include <vector>
+#include <lerobot_cpp/robots/Robot.h>
 
 /**
  * @class SO101
  * @brief Manipulator controller for SO101 robot with 6-DOF
  */
-class SO101 {
+class SO101 : public Robot<6> {
 public:
 
 	// Nominal limits from `so101_new_calib.urdf` (radians), used for logging and safe clamping.
@@ -63,79 +58,6 @@ public:
      * @param servoInstance Reference to an initialized STS3215 instance
      */
     SO101(STS3215& servoInstance);
-
-    /**
-     * @brief Configure joint limits and IDs (default IDs: 1 to 6)
-     * @param ids Array of 6 servo IDs
-     * @return true if successful
-     */
-    bool init(const std::array<u8, 6>& ids = {1, 2, 3, 4, 5, 6});
-
-    /**
-     * @brief Move a specific joint to an angle in radians
-     * @param jointIndex Joint index (0-5)
-     * @param angleRad Target angle in radians
-     * @param speedRadPerS Angular velocity in radians/second (default 1.0)
-     * @param accRadPerS2 Angular acceleration in radians/second^2 (default 0.5)
-     * @return 1 on success, 0 on failure
-     */
-    int setJointAngle(u8 jointIndex, float angleRad, float speedRadPerS = 1.0f, float accRadPerS2 = 0.5f);
-
-    /**
-     * @brief Move all joints simultaneously to target angles
-     * @param anglesRad Array of 6 target angles in radians
-     * @param speedsRadPerS Array of 6 angular velocities (optional)
-     * @param accsRadPerS2 Array of 6 angular accelerations (optional)
-     */
-    void setAllJointAngles(const std::array<float, 6>& anglesRad,
-                           const std::array<float, 6>& speedsRadPerS = {},
-                           const std::array<float, 6>& accsRadPerS2 = {});
-
-    /**
-     * @brief Get current joint angle in radians
-     * @param jointIndex Joint index (0-5)
-     * @return Angle in radians, or NaN on error
-     */
-    float getJointAngle(u8 jointIndex);
-
-	std::optional<std::array<float, 6>> getAllJointAngles();
-
-    /**
-     * @brief Get current joint speed in radians per second
-     * @param jointIndex Joint index (0-5)
-     * @return Speed in rad/s, or NaN on error
-     */
-    float getJointSpeed(u8 jointIndex);
-
-    /**
-     * @brief Get all joint speeds via synchronized bus read
-     * @return Array of 6 speeds in rad/s, or nullopt if sync read failed
-     */
-    std::optional<std::array<float, 6>> getAllJointSpeeds();
-
-	/**
-	 * @brief Check if any joint of the robot is moving
-	 * @return true if moving, false otherwise
-	 */
-    bool isMoving();
-
-    /**
-     * @brief Wait until all joints have finished their current movement
-     * @param pollIntervalMs Interval between checks in milliseconds (default 20ms)
-     * @param timeoutMs Maximum wait time in milliseconds (0 for no timeout, default 0)
-     * @return true if all joints stopped, false on timeout
-     */
-    bool waitMovementFinished(int pollIntervalMs = 20, int timeoutMs = 0);
-
-    /**
-     * @brief Enable/disable torque for all joints
-     * @param enable true to enable, false to disable
-     */
-    void enableTorque(bool enable);
-
-private:
-    STS3215& sm_st;
-    std::array<u8, 6> servoIDs{};
 };
 
 #endif // _SO101_H
